@@ -156,3 +156,18 @@ The project includes an interactive **Streamlit dashboard** that allows:
 ### 1️⃣ Install Dependencies
 ```bash
 pip install -r requirements.txt
+```
+
+2️⃣ Train the Model
+```bash
+python -m src.train
+```
+
+3️⃣ Run Prediction Script
+```bash
+python -m src.predict
+```
+
+4️⃣ Launch Streamlit App
+```bash
+python -m streamlit run app.py
