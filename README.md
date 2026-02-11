@@ -171,3 +171,29 @@ python -m src.predict
 4️⃣ Launch Streamlit App
 ```bash
 python -m streamlit run app.py
+```
+
+---
+
+## 🧠 Key Learnings
+
+- Importance of engine-wise splitting in time-series problems
+- Sensor selection significantly improves model performance
+- Random Forest handles sensor interactions better than linear models
+- Visualization is crucial for trust in predictive maintenance systems
+
+---
+
+## 🚀 Future Improvements
+
+- LSTM / GRU deep learning models for time-series prediction
+- Real-time streaming sensor data
+- Model monitoring and drift detection
+- Cloud deployment (Streamlit Cloud / AWS)
+
+---
+
+## 👨‍💻 Author
+
+Akhil T V
+Aspiring Data Scientist | Machine Learning Enthusiast
