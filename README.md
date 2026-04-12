@@ -1,199 +1,217 @@
-# 🔧 Predictive Maintenance System (Remaining Useful Life Prediction)
+# 🚀 Predictive Maintenance — Remaining Useful Life (RUL) Prediction
 
-## 📌 Project Overview
-This project implements an **end-to-end Predictive Maintenance system** to estimate the **Remaining Useful Life (RUL)** of industrial machinery using sensor data.  
-The goal is to **predict equipment failure in advance** so that maintenance can be scheduled proactively, avoiding unplanned downtime and costly breakdowns.
 
-The system uses historical sensor readings from multiple engines and applies **machine learning models** to forecast how many operational cycles remain before failure.
 
----
 
-## 🎯 Objectives
-- Predict Remaining Useful Life (RUL) of machines using sensor data
-- Identify sensor degradation patterns leading to failure
-- Compare multiple regression models and select the best-performing one
-- Build a **modular, reusable ML pipeline**
-- Deploy predictions using an **interactive Streamlit dashboard**
+## 📌 Overview
+
+This project focuses on **Predictive Maintenance for Manufacturing Systems**, where the goal is to estimate the **Remaining Useful Life (RUL)** of machines using sensor data.
+
+By predicting when a machine is likely to fail, businesses can:
+- ✅ Reduce unplanned downtime
+- ✅ Optimize maintenance schedules
+- ✅ Improve operational efficiency
 
 ---
 
-## 🏭 Real-World Relevance
-Predictive maintenance is widely used in:
-- Manufacturing plants
-- Aviation (engine health monitoring)
-- Power plants
-- Heavy machinery and industrial IoT systems
+## 🎯 Problem Statement
 
-This project mirrors **real industrial workflows**, including:
-- Engine-wise data splitting (to avoid data leakage)
-- Group-based cross-validation
-- Sensor selection based on variance and correlation
-- Model explainability through feature importance
+In industrial environments, unexpected machine failures can lead to significant financial losses.
+
+> **How can we predict machine failure in advance using sensor data?**
+
+This is modeled as a **Remaining Useful Life (RUL) Regression Problem**, where the model learns degradation patterns from historical sensor readings to estimate how many cycles remain before failure.
 
 ---
 
 ## 📊 Dataset
-**Source:** NASA C-MAPSS Turbofan Engine Degradation Dataset  
-**Type:** Public research dataset (not a Kaggle competition)
 
-**Data characteristics:**
-- Multiple engines
-- Multivariate time-series sensor data
-- Failure occurs naturally over time
-- RUL calculated from max cycle per engine
+| Property | Details |
+|----------|---------|
+| **Source** | NASA Turbofan Engine Degradation Dataset |
+| **File** | `train_FD001.csv` |
+| **Records** | 20,631 rows |
 
----
-
-## 🗂 Project Structure
-```
-predictive_maintenance/
-│
-├── dataset/
-│ ├── train_FD001.txt
-│ └── train_FD001.csv
-│
-├── models/
-│ └── rul_prediction_model.joblib
-│
-├── notebooks/
-│ ├── 1_data_understanding.ipynb
-│ ├── 2_eda.ipynb
-│ └── 3_preprocessing_&_modeling.ipynb
-│
-├── src/
-│ ├── data_loader.py
-│ ├── preprocessor.py
-│ ├── train.py
-│ └── predict.py
-│
-├── app.py
-├── requirements.txt
-```
-
+**Features include:**
+- Engine ID
+- Cycle (time step)
+- 3 Operational Settings
+- 21 Sensor Readings (`sensor_1` to `sensor_21`)
 
 ---
 
-## 🔬 Methodology
+## 🧠 Methodology
 
 ### 1️⃣ Data Understanding
-- Converted raw `.txt` sensor data into structured CSV format
-- Verified data types, missing values, and duplicates
-- Identified constant and non-informative sensors
+- Converted raw `.txt` data into structured `.csv`
+- Assigned meaningful column names
+- Verified no missing values, no duplicates, and correct data types
 
 ### 2️⃣ Exploratory Data Analysis (EDA)
-- Sensor variance analysis
-- Sensor correlation heatmaps
 - Engine life cycle distribution
-- Sensor degradation trends over time
-- RUL distribution analysis
+- Sensor trend analysis over time
+- Sensor variance analysis
+- Correlation heatmap
+- Outlier visualization using boxplots
+
+> **Key Insight:** Sensors like **sensor_7** and **sensor_12** show strong degradation patterns correlated with machine failure.
 
 ### 3️⃣ Feature Engineering
-- Calculated Remaining Useful Life (RUL)
-- Removed sensors with:
-  - Near-zero variance
-  - No degradation signal
-- Selected informative sensors based on:
-  - Variance
-  - Correlation
-  - Feature importance
 
-### 4️⃣ Model Training
-Models evaluated:
-- Linear Regression
-- Ridge Regression
-- Lasso Regression
-- Random Forest Regressor
+**RUL Target Variable:**
+```python
+RUL = max_cycle - current_cycle
+```
 
-Best model:
-- **Random Forest Regressor**
+**Removed low-variance sensors** (near-constant readings that add noise):
+`sensor_1`, `sensor_5`, `sensor_10`, `sensor_16`, `sensor_18`, `sensor_19`
 
-### 5️⃣ Model Validation
-- Engine-wise train-test split
-- GroupKFold cross-validation
-- Evaluation metrics:
-  - MAE
-  - RMSE
-  - R² Score
+### 4️⃣ Model Building
 
----
+| Model | Notes |
+|-------|-------|
+| Linear Regression | Baseline |
+| Ridge Regression | L2 regularization |
+| Lasso Regression | L1 regularization |
+| **Random Forest Regressor** | ✅ **Best Performer** |
 
-## 🧪 Model Performance (Final)
-| Metric | Value |
-|------|------|
-| MAE  | ~25.8 |
-| RMSE | ~35.2 |
-| R²   | ~0.71 |
+### 5️⃣ Model Evaluation
 
----
+Metrics used:
+- **MAE** — Mean Absolute Error
+- **RMSE** — Root Mean Squared Error
+- **R² Score** — Coefficient of Determination
 
-## 📈 Feature Importance
-Top sensors contributing to RUL prediction:
-- `sensor_9`
-- `sensor_7`
-- `sensor_12`
-- `sensor_4`
+### 6️⃣ Model Optimization
+- Hyperparameter tuning via **GridSearchCV**
+- Cross-validation using **GroupKFold** (engine-wise split to prevent data leakage)
 
-These sensors show clear degradation patterns as engines approach failure.
+### 7️⃣ Deployment
+
+Built an interactive dashboard with **Streamlit**:
+- 🔍 Select Engine ID
+- ⚡ Predict RUL instantly
+- 📉 Visualize sensor trends
+- 📋 View latest sensor values
+- 💾 Download results as CSV
 
 ---
 
-## 🖥 Streamlit Application
-The project includes an interactive **Streamlit dashboard** that allows:
+## 🏗️ Project Structure
 
-- Engine selection (1–100)
-- Real-time RUL prediction
-- Engine health classification:
-  - 🟢 Healthy
-  - 🟠 Warning
-  - 🔴 Critical
-- Sensor degradation visualization
-- Downloadable latest sensor values as CSV
+```
+PREDICTIVE_MAINTENANCE/
+│
+├── data/
+│   └── train_FD001.csv
+│
+├── models/
+│   ├── rf_rul_model.pkl
+│   └── feature_columns.pkl
+│
+├── notebooks/
+│   ├── 1_data_understanding.ipynb
+│   ├── 2_eda.ipynb
+│   └── 3_preprocessing_&_modeling.ipynb
+│
+├── src/
+│   ├── data_loader.py
+│   ├── preprocessor.py
+│   ├── train.py
+│   └── predict.py
+│
+├── app/
+│   └── app.py
+│
+├── requirements.txt
+└── README.md
+```
 
 ---
 
-## ▶️ How to Run the Project
+## ⚙️ Installation & Setup
 
-### 1️⃣ Install Dependencies
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-username/predictive-maintenance.git
+cd predictive-maintenance
+```
+
+### 2. Create a Virtual Environment
+```bash
+python -m env_name
+
+# Windows
+venv\Scripts\activate
+
+# macOS / Linux
+source env_name/bin/activate
+```
+
+### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-2️⃣ Train the Model
-```bash
-python -m src.train
-```
+---
 
-3️⃣ Run Prediction Script
-```bash
-python -m src.predict
-```
+## ▶️ Run the Application
 
-4️⃣ Launch Streamlit App
 ```bash
-python -m streamlit run app.py
+streamlit run app/app.py
 ```
 
 ---
 
-## 🧠 Key Learnings
+## 📈 Sample Output
 
-- Importance of engine-wise splitting in time-series problems
-- Sensor selection significantly improves model performance
-- Random Forest handles sensor interactions better than linear models
-- Visualization is crucial for trust in predictive maintenance systems
+```
+Engine ID     : 42
+Predicted RUL : 6 cycles
+Engine Status : 🔴 CRITICAL
+```
+
+The dashboard also renders dynamic sensor trend visualizations for the selected engine.
+
+---
+
+## 💡 Key Learnings
+
+- Time-series degradation modeling for industrial machinery
+- Feature selection using variance thresholding
+- Handling grouped data with engine-wise train/validation splits
+- Building production-ready ML pipelines with Scikit-learn
+- Deploying ML models as interactive apps using Streamlit
 
 ---
 
 ## 🚀 Future Improvements
 
-- LSTM / GRU deep learning models for time-series prediction
-- Real-time streaming sensor data
-- Model monitoring and drift detection
-- Cloud deployment (Streamlit Cloud / AWS)
+- [ ] Implement **LSTM** for sequence-based RUL prediction
+- [ ] Add **real-time data streaming** support
+- [ ] Deploy on cloud (**AWS / Azure / Streamlit Cloud**)
+- [ ] Build a **REST API** using FastAPI
+- [ ] Extend to multi-condition datasets (FD002, FD003, FD004)
+
+---
+
+## 🛠️ Tech Stack
+
+| Category | Tools |
+|----------|-------|
+| Language | Python 3.8+ |
+| Data Processing | Pandas, NumPy |
+| Machine Learning | Scikit-learn |
+| Visualization | Matplotlib, Seaborn |
+| Deployment | Streamlit |
 
 ---
 
 ## 👨‍💻 Author
 
-Akhil T V
-Aspiring Data Scientist | Machine Learning Enthusiast
+**Akhil T V**  
+*Aspiring Data Scientist*
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?logo=linkedin)](https://www.linkedin.com/in/akhil-t-v/)
+
+---
