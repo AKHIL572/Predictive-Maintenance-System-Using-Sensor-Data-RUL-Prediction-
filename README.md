@@ -90,9 +90,11 @@ Metrics used:
 
 Built an interactive dashboard with **Streamlit**:
 - 🔍 Select Engine ID
-- ⚡ Predict RUL instantly
-- 📉 Visualize sensor trends
-- 📋 View latest sensor values
+- ⏱️ **Cycle Slider:** Inspect engine health at any specific point in its lifetime
+- ⚡ Predict RUL instantly for the selected cycle
+- 📈 **RUL Trajectory:** Visualize the engine's entire simulated health trajectory over time against critical thresholds
+- 📉 Visualize individual sensor degradation trends
+- 📋 View sensor values for the selected cycle
 - 💾 Download results as CSV
 
 ---
@@ -202,7 +204,7 @@ The dashboard also renders dynamic sensor trend visualizations for the selected 
 | Language | Python 3.8+ |
 | Data Processing | Pandas, NumPy |
 | Machine Learning | Scikit-learn |
-| Visualization | Matplotlib, Seaborn |
+| Visualization | Matplotlib |
 | Deployment | Streamlit |
 
 ---

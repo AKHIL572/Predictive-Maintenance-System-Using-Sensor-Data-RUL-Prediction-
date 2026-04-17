@@ -7,10 +7,15 @@ def add_rul(df: pd.DataFrame) -> pd.DataFrame:
     """
     Adds Remaining Useful Life (RUL) column if not already present.
     RUL = max_cycle_for_engine - current_cycle
+    Requires 'engine_id' and 'cycle' columns.
     """
     df = df.copy()
 
     if "RUL" not in df.columns:
+        if "engine_id" not in df.columns or "cycle" not in df.columns:
+            raise ValueError(
+                "DataFrame must contain 'engine_id' and 'cycle' columns to compute RUL."
+            )
         max_cycle = df.groupby("engine_id")["cycle"].transform("max")
         df["RUL"] = max_cycle - df["cycle"]
 
@@ -19,7 +24,7 @@ def add_rul(df: pd.DataFrame) -> pd.DataFrame:
 
 def apply_rul_capping(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Caps RUL at RUL_CAP for training stability.
+    Caps RUL at RUL_CAP. Only used during training — not at inference.
     """
     df = df.copy()
     df["RUL"] = df["RUL"].clip(upper=RUL_CAP)
@@ -28,11 +33,11 @@ def apply_rul_capping(df: pd.DataFrame) -> pd.DataFrame:
 
 def get_low_variance_sensors(df: pd.DataFrame, threshold: float = 0.01) -> list:
     """
-    Returns sensor column names whose standard deviation falls below `threshold`.
-    These sensors carry little signal and are dropped before training.
+    Returns sensor column names whose std falls below threshold.
+    These carry little signal and are dropped before training.
     """
     sensor_cols = [col for col in df.columns if col.startswith("sensor")]
-    sensor_std = df[sensor_cols].std()                    # std (not var) — threshold is for std
+    sensor_std = df[sensor_cols].std()
     return sensor_std[sensor_std < threshold].index.tolist()
 
 
@@ -46,11 +51,10 @@ def preprocess_features(
 
     Parameters
     ----------
-    df           : Raw DataFrame (must contain engine_id, cycle, sensor_* columns).
-    training     : If True, compute and return feature_cols from the data.
-                   If False, feature_cols MUST be supplied (e.g. loaded from .pkl).
-    feature_cols : List of column names to select as model features.
-                   Required when training=False. Ignored when training=True.
+    df           : Raw DataFrame with engine_id, cycle, sensor_* columns.
+    training     : If True, derives and returns feature_cols from data.
+                   If False, feature_cols must be supplied.
+    feature_cols : Required when training=False.
 
     Returns
     -------
@@ -59,27 +63,30 @@ def preprocess_features(
     """
     df = df.copy()
 
-    # Step 1: Ensure RUL column exists
-    df = add_rul(df)
-
-    # Step 2: Cap RUL
-    df = apply_rul_capping(df)
-
     if training:
-        # Derive feature_cols from THIS dataset (training data only)
+        # Step 1: Add RUL
+        df = add_rul(df)
+
+        # Step 2: Cap RUL — only during training
+        df = apply_rul_capping(df)
+
+        # Step 3: Derive feature columns from training data
         low_variance_sensors = get_low_variance_sensors(df)
-        feature_cols = df.drop(
-            columns=["engine_id", "cycle", "RUL"] + low_variance_sensors,
-            errors="ignore",
-        ).columns.tolist()
+        low_variance_ops = [
+            col for col in df.columns
+            if col.startswith("op_setting") and df[col].std() < 0.01
+        ]
+        cols_to_drop = ["engine_id", "cycle", "RUL"] + \
+            low_variance_sensors + low_variance_ops
+
+        feature_cols = [c for c in df.columns if c not in cols_to_drop]
 
         X = df[feature_cols]
         y = df["RUL"]
         return X, y, feature_cols
 
     else:
-        # Inference mode: NEVER recompute feature_cols from input data.
-        # A single row would have std=0 for all sensors, dropping everything.
+        # Inference mode — never recompute feature_cols
         if feature_cols is None:
             raise ValueError(
                 "feature_cols must be provided when training=False. "
@@ -89,7 +96,7 @@ def preprocess_features(
         missing = [c for c in feature_cols if c not in df.columns]
         if missing:
             raise ValueError(
-                f"The following expected features are missing from the input DataFrame: {missing}"
+                f"The following expected features are missing from input: {missing}"
             )
 
         X = df[feature_cols]
